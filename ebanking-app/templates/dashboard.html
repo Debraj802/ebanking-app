@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="dashboard-container">
+    <!-- Security Reminder -->
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <p style="color: #856404; margin-bottom: 5px;">
+            <strong>🔐 Security Reminder:</strong>
+        </p>
+        <p style="color: #856404; font-size: 14px;">
+            Never share your Security PIN with anyone. Bank will NEVER ask for your PIN via phone, email, or SMS.
+        </p>
+    </div>
+
+    <!-- Account Credentials Note -->
+    <div style="background-color: #d4edda; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #28a745;">
+        <p style="color: #155724; margin-bottom: 5px;">
+            <strong>📌 Account Credentials:</strong>
+        </p>
+        <p style="color: #155724; font-size: 14px;">
+            Your Account Number: <strong>{{ account.account_id }}</strong><br>
+            <small>Your Security PIN was shown during account creation. If you've forgotten it, please visit a branch with ID proof.</small>
+        </p>
+    </div>
+
+    <div class="account-info">
+        <h2>Welcome, {{ account.name }}</h2>
+        <p><strong>Account Number:</strong> {{ account.account_id }}</p>
+        <p><strong>Account Status:</strong> 
+            <span style="color: {% if account.status == 'ACTIVE' %}#28a745{% else %}#dc3545{% endif %};">
+                {{ account.status }}
+            </span>
+        </p>
+        <p><strong>Available Balance:</strong> 
+            <span class="amount">₹{{ "%.2f"|format(account.available_balance) }}</span>
+        </p>
+        <p><strong>Last Transaction:</strong> {{ account.last_transaction_datetime }}</p>
+        <p><strong>Mobile:</strong> {{ account.mobile_number }}</p>
+        <p><strong>Email:</strong> {{ account.email }}</p>
+    </div>
+
+    <h3 style="color: #003366; margin-bottom: 20px;">Quick Actions</h3>
+    
+    <div class="services-grid">
+        <div class="service-card">
+            <h3>💰 Balance Inquiry</h3>
+            <p>Check your current account balance and last transaction</p>
+            <a href="{{ url_for('balance_inquiry') }}" class="btn btn-primary">Check Balance</a>
+        </div>
+
+        <div class="service-card">
+            <h3>📥 Deposit Money</h3>
+            <p>Add money to your account</p>
+            <a href="{{ url_for('deposit') }}" class="btn btn-success">Deposit</a>
+        </div>
+
+        <div class="service-card">
+            <h3>📤 Withdraw Money</h3>
+            <p>Withdraw money from your account</p>
+            <a href="{{ url_for('withdraw') }}" class="btn btn-warning" style="background-color: #ffc107; color: #000;">Withdraw</a>
+        </div>
+
+        <div class="service-card">
+            <h3>🔄 Transfer Money</h3>
+            <p>Send money to another account</p>
+            <a href="{{ url_for('transfer') }}" class="btn btn-primary">Transfer</a>
+        </div>
+
+        <div class="service-card">
+            <h3>📋 Transaction History</h3>
+            <p>View your recent transactions</p>
+            <a href="{{ url_for('transaction_history') }}" class="btn btn-secondary">View History</a>
+        </div>
+
+        <div class="service-card">
+            <h3>✓ Verify Contact</h3>
+            <p>Check if mobile/email is registered</p>
+            <a href="{{ url_for('verify_contact') }}" class="btn btn-secondary">Verify</a>
+        </div>
+
+        <div class="service-card">
+            <h3>🔐 Change PIN</h3>
+            <p>Update your security PIN</p>
+            <a href="{{ url_for('change_pin') }}" class="btn btn-warning" style="background-color: #ffc107; color: #000;">Change PIN</a>
+        </div>
+
+        <div class="service-card">
+            <h3>❌ Close Account</h3>
+            <p>Request to close your account</p>
+            <a href="{{ url_for('delete_account') }}" class="btn btn-danger">Close Account</a>
+        </div>
+
+        <div class="service-card">
+            <h3>🚪 Logout</h3>
+            <p>Securely logout from your account</p>
+            <a href="{{ url_for('logout') }}" class="btn btn-secondary">Logout</a>
+        </div>
+    </div>
+
+    <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+        <h4 style="color: #003366; margin-bottom: 15px;">Account Summary</h4>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+            <div>
+                <strong>Current Balance:</strong>
+                <span style="color: #28a745; font-size: 20px;">₹{{ "%.2f"|format(account.available_balance) }}</span>
+            </div>
+            <div>
+                <strong>Account Created:</strong>
+                <span>{{ account.created_at }}</span>
+            </div>
+            <div>
+                <strong>Last Activity:</strong>
+                <span>{{ account.last_transaction_datetime or 'No transactions yet' }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const accountInfo = document.querySelector('.account-info p:first-child');
+    if (accountInfo) {
+        accountInfo.style.cursor = 'pointer';
+        accountInfo.title = 'Click to copy account number';
+        accountInfo.addEventListener('click', function() {
+            const accountNumber = this.textContent.replace('Account Number:', '').trim();
+            copyToClipboard(accountNumber);
+        });
+    }
+});
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        alert('Account number copied to clipboard!');
+    }, function(err) {
+        console.error('Could not copy text: ', err);
+    });
+}
+</script>
+{% endblock %}

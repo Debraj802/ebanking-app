@@ -1,0 +1,193 @@
+{% extends "base.html" %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 400px;">
+    <h2>Account Login</h2>
+    
+    <div style="background-color: #e8f4fd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p style="color: #003366; margin-bottom: 5px;">🔐 Secure Login</p>
+        <p style="color: #666; font-size: 14px;">Enter your 10-digit account number and 6-digit Security PIN</p>
+    </div>
+    
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <p style="color: #856404; font-size: 14px; margin-bottom: 5px;">
+            <strong>⚠️ NEVER share your Security PIN:</strong>
+        </p>
+        <ul style="color: #856404; font-size: 13px; margin-left: 20px;">
+            <li>Bank will NEVER ask for your PIN</li>
+            <li>No phone call, email, or SMS will request your PIN</li>
+            <li>Only enter PIN on this official login page</li>
+        </ul>
+    </div>
+    
+    <form action="{{ url_for('login') }}" method="POST" id="loginForm">
+        <div class="form-group">
+            <label for="account_id">Account Number:</label>
+            <input type="text" id="account_id" name="account_id" 
+                   placeholder="Enter 10-digit account number" 
+                   pattern="[0-9]{10}" 
+                   maxlength="10" 
+                   required
+                   autofocus>
+            <div id="account-status" class="verification-status"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="security_pin">Security PIN:
+                <span class="tooltip">ⓘ
+                    <span class="tooltiptext">6-digit PIN generated during account creation</span>
+                </span>
+            </label>
+            <input type="password" id="security_pin" name="security_pin" 
+                   placeholder="Enter 6-digit PIN" 
+                   pattern="[0-9]{6}" 
+                   maxlength="6" 
+                   inputmode="numeric"
+                   required>
+            <div id="pin-status" class="verification-status"></div>
+            <small style="color: #999; display: block; margin-top: 5px;">
+                <i class="fas fa-eye-slash" id="togglePin" style="cursor: pointer;" onclick="togglePinVisibility()"> Show PIN</i>
+            </small>
+        </div>
+        
+        <button type="submit" class="btn btn-success" style="width: 100%; margin-bottom: 10px;">
+            Login to Account
+        </button>
+        
+        <a href="{{ url_for('create_account') }}" class="btn btn-secondary" style="width: 100%;">
+            Create New Account
+        </a>
+    </form>
+    
+    <div style="margin-top: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+        <h4 style="color: #003366; margin-bottom: 10px;">Need Help?</h4>
+        <ul style="color: #666; font-size: 14px; list-style-type: none; padding-left: 0;">
+            <li style="margin-bottom: 8px;">• First time user? <a href="{{ url_for('create_account') }}" style="color: #003366;">Create an account</a></li>
+            <li style="margin-bottom: 8px;">• Forgot Security PIN? Contact branch with ID proof</li>
+            <li style="margin-bottom: 8px;">• Having trouble? Call 1800-123-4567</li>
+        </ul>
+    </div>
+    
+    <div style="margin-top: 20px; padding: 10px; background-color: #f8d7da; border-radius: 4px; text-align: center;">
+        <p style="color: #721c24; font-size: 12px; margin: 0;">
+            🔒 Remember: Bank never asks for your PIN. Stay safe from fraud!
+        </p>
+    </div>
+</div>
+
+<script>
+function togglePinVisibility() {
+    const pinInput = document.getElementById('security_pin');
+    const toggleIcon = document.getElementById('togglePin');
+    
+    if (pinInput.type === 'password') {
+        pinInput.type = 'text';
+        toggleIcon.innerHTML = ' 🙈 Hide PIN';
+    } else {
+        pinInput.type = 'password';
+        toggleIcon.innerHTML = ' 👁️ Show PIN';
+    }
+}
+
+document.getElementById('account_id').addEventListener('input', function() {
+    const accountId = this.value;
+    const statusDiv = document.getElementById('account-status');
+    
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    if (accountId.length === 10) {
+        statusDiv.className = 'verification-status verification-success';
+        statusDiv.textContent = '✓ Valid account number';
+    } else if (accountId.length > 0) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Account number must be 10 digits';
+    } else {
+        statusDiv.textContent = '';
+    }
+});
+
+document.getElementById('security_pin').addEventListener('input', function() {
+    const pin = this.value;
+    const statusDiv = document.getElementById('pin-status');
+    
+    this.value = this.value.replace(/[^0-9]/g, '');
+    
+    if (pin.length === 6) {
+        statusDiv.className = 'verification-status verification-success';
+        statusDiv.textContent = '✓ Valid PIN format';
+    } else if (pin.length > 0) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ PIN must be 6 digits';
+    } else {
+        statusDiv.textContent = '';
+    }
+});
+
+document.getElementById('loginForm').addEventListener('submit', function(e) {
+    const accountId = document.getElementById('account_id').value;
+    const pin = document.getElementById('security_pin').value;
+    
+    if (accountId.length !== 10) {
+        e.preventDefault();
+        alert('Please enter a valid 10-digit account number');
+        return;
+    }
+    
+    if (pin.length !== 6) {
+        e.preventDefault();
+        alert('Please enter a valid 6-digit Security PIN');
+        return;
+    }
+    
+    const submitBtn = this.querySelector('button[type="submit"]');
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Verifying...';
+});
+
+window.onload = function() {
+    document.getElementById('account_id').focus();
+};
+</script>
+
+<style>
+.tooltip {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+}
+
+.tooltip .tooltiptext {
+    visibility: hidden;
+    width: 200px;
+    background-color: #333;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 5px;
+    position: absolute;
+    z-index: 1;
+    bottom: 125%;
+    left: 50%;
+    margin-left: -100px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    font-size: 12px;
+}
+
+.tooltip:hover .tooltiptext {
+    visibility: visible;
+    opacity: 1;
+}
+
+#togglePin {
+    user-select: none;
+    color: #003366;
+}
+
+#togglePin:hover {
+    text-decoration: underline;
+}
+</style>
+{% endblock %}

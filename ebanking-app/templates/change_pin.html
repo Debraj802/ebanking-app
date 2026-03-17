@@ -1,0 +1,131 @@
+{% extends "base.html" %}
+
+{% block title %}Change Security PIN{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Change Security PIN</h2>
+    
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <h4 style="color: #856404; margin-bottom: 10px;">🔐 PIN Security Guidelines:</h4>
+        <ul style="color: #856404; margin-left: 20px;">
+            <li>Choose a PIN that's easy to remember but hard to guess</li>
+            <li>Don't use sequential numbers (123456) or repeated numbers (111111)</li>
+            <li>Never share your PIN with anyone</li>
+            <li>Change your PIN regularly for better security</li>
+            <li>Bank will NEVER ask for your PIN</li>
+        </ul>
+    </div>
+    
+    <form action="{{ url_for('change_pin') }}" method="POST" id="changePinForm">
+        <div class="form-group">
+            <label for="current_pin">Current PIN:</label>
+            <input type="password" id="current_pin" name="current_pin" 
+                   placeholder="Enter current 6-digit PIN" 
+                   pattern="[0-9]{6}" maxlength="6" required>
+        </div>
+        
+        <div class="form-group">
+            <label for="new_pin">New PIN:</label>
+            <input type="password" id="new_pin" name="new_pin" 
+                   placeholder="Enter new 6-digit PIN" 
+                   pattern="[0-9]{6}" maxlength="6" required>
+            <div id="new-pin-status" class="verification-status"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="confirm_pin">Confirm New PIN:</label>
+            <input type="password" id="confirm_pin" name="confirm_pin" 
+                   placeholder="Re-enter new PIN" 
+                   pattern="[0-9]{6}" maxlength="6" required>
+            <div id="confirm-pin-status" class="verification-status"></div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">
+            Change PIN
+        </button>
+        
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="width: 100%;">
+            Cancel
+        </a>
+    </form>
+    
+    <div style="margin-top: 20px; padding: 15px; background-color: #f8d7da; border-radius: 4px;">
+        <p style="color: #721c24; font-size: 13px; margin: 0;">
+            <strong>⚠️ Important:</strong> After changing your PIN, use the new PIN for all future logins.
+        </p>
+    </div>
+</div>
+
+<script>
+document.getElementById('new_pin').addEventListener('input', validatePins);
+document.getElementById('confirm_pin').addEventListener('input', validatePins);
+
+function validatePins() {
+    const newPin = document.getElementById('new_pin').value;
+    const confirmPin = document.getElementById('confirm_pin').value;
+    const newPinStatus = document.getElementById('new-pin-status');
+    const confirmStatus = document.getElementById('confirm-pin-status');
+    
+    // Validate new PIN format
+    if (newPin.length === 6) {
+        // Check for weak PINs
+        const weakPins = ['123456', '111111', '000000', '123123', '654321'];
+        if (weakPins.includes(newPin)) {
+            newPinStatus.className = 'verification-status verification-error';
+            newPinStatus.textContent = '⚠️ This PIN is too weak. Choose a different one';
+        } else {
+            newPinStatus.className = 'verification-status verification-success';
+            newPinStatus.textContent = '✓ Valid PIN format';
+        }
+    } else if (newPin.length > 0) {
+        newPinStatus.className = 'verification-status verification-error';
+        newPinStatus.textContent = '✗ PIN must be 6 digits';
+    } else {
+        newPinStatus.textContent = '';
+    }
+    
+    // Validate confirm PIN
+    if (confirmPin.length > 0) {
+        if (confirmPin === newPin) {
+            confirmStatus.className = 'verification-status verification-success';
+            confirmStatus.textContent = '✓ PINs match';
+        } else {
+            confirmStatus.className = 'verification-status verification-error';
+            confirmStatus.textContent = '✗ PINs do not match';
+        }
+    } else {
+        confirmStatus.textContent = '';
+    }
+}
+
+document.getElementById('changePinForm').addEventListener('submit', function(e) {
+    const newPin = document.getElementById('new_pin').value;
+    const confirmPin = document.getElementById('confirm_pin').value;
+    const currentPin = document.getElementById('current_pin').value;
+    
+    if (newPin !== confirmPin) {
+        e.preventDefault();
+        alert('New PIN and confirm PIN do not match!');
+        return;
+    }
+    
+    if (newPin === currentPin) {
+        e.preventDefault();
+        alert('New PIN must be different from current PIN');
+        return;
+    }
+    
+    const weakPins = ['123456', '111111', '000000', '123123', '654321'];
+    if (weakPins.includes(newPin)) {
+        e.preventDefault();
+        alert('Please choose a stronger PIN. Avoid sequential or repeated numbers.');
+        return;
+    }
+    
+    if (!confirm('Are you sure you want to change your PIN?')) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

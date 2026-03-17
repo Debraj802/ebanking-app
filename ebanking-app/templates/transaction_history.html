@@ -1,0 +1,170 @@
+{% extends "base.html" %}
+
+{% block title %}Transaction History{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 800px;">
+    <h2>Transaction History</h2>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p><strong>Account Number:</strong> {{ account.account_id }}</p>
+        <p><strong>Account Holder:</strong> {{ account.name }}</p>
+        <p><strong>Current Balance:</strong> <span class="amount">₹{{ "%.2f"|format(account.available_balance) }}</span></p>
+    </div>
+    
+    <!-- Note: Since we're using single table, we'll show simulated transaction history -->
+    <div style="margin-bottom: 20px;">
+        <p style="color: #666; font-style: italic;">* Showing last 5 transactions (simulated data)</p>
+    </div>
+    
+    <div class="table-container">
+        <table>
+            <thead>
+                <tr>
+                    <th>Date & Time</th>
+                    <th>Description</th>
+                    <th>Debit (₹)</th>
+                    <th>Credit (₹)</th>
+                    <th>Balance (₹)</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if account.last_transaction_datetime %}
+                <!-- Simulate some transactions based on available data -->
+                <tr>
+                    <td>{{ account.last_transaction_datetime }}</td>
+                    <td>Last transaction</td>
+                    <td>-</td>
+                    <td>-</td>
+                    <td>₹{{ "%.2f"|format(account.available_balance) }}</td>
+                </tr>
+                <tr>
+                    <td>{{ account.created_at }}</td>
+                    <td>Account created</td>
+                    <td>-</td>
+                    <td>₹{{ "%.2f"|format(account.available_balance) }}</td>
+                    <td>₹{{ "%.2f"|format(account.available_balance) }}</td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 30px;">
+                        <p style="color: #666;">No transactions found</p>
+                        <p style="color: #999; font-size: 14px;">Your transaction history will appear here once you perform any banking operation.</p>
+                    </td>
+                </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+    
+    <!-- Date Range Filter (UI only) -->
+    <div style="margin: 20px 0; padding: 20px; background-color: #f8f9fa; border-radius: 4px;">
+        <h4 style="color: #003366; margin-bottom: 15px;">Filter by Date</h4>
+        <div style="display: grid; grid-template-columns: 1fr 1fr auto; gap: 10px;">
+            <div>
+                <label for="from_date">From:</label>
+                <input type="date" id="from_date" class="form-control">
+            </div>
+            <div>
+                <label for="to_date">To:</label>
+                <input type="date" id="to_date" class="form-control">
+            </div>
+            <div style="display: flex; align-items: flex-end;">
+                <button onclick="filterTransactions()" class="btn btn-primary">Filter</button>
+            </div>
+        </div>
+        <p style="color: #666; font-size: 12px; margin-top: 10px;">* Date filtering is for demo only. Full transaction history requires separate transactions table.</p>
+    </div>
+    
+    <!-- Download Options -->
+    <div style="display: flex; gap: 10px; margin: 20px 0;">
+        <button onclick="downloadStatement('pdf')" class="btn btn-secondary" style="flex: 1;">
+            📥 Download PDF
+        </button>
+        <button onclick="downloadStatement('excel')" class="btn btn-success" style="flex: 1;">
+            📊 Download Excel
+        </button>
+    </div>
+    
+    <!-- Transaction Summary -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-top: 20px;">
+        <div style="background-color: #d4edda; padding: 15px; border-radius: 4px; text-align: center;">
+            <p style="color: #155724; font-size: 14px;">Total Credits</p>
+            <h3 style="color: #155724;">₹{{ "%.2f"|format(account.available_balance) }}</h3>
+        </div>
+        <div style="background-color: #f8d7da; padding: 15px; border-radius: 4px; text-align: center;">
+            <p style="color: #721c24; font-size: 14px;">Total Debits</p>
+            <h3 style="color: #721c24;">₹0.00</h3>
+        </div>
+    </div>
+    
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+function filterTransactions() {
+    alert('Full transaction history with date filtering requires a separate transactions table. This is a demo UI.');
+}
+
+function downloadStatement(format) {
+    if (format === 'pdf') {
+        alert('PDF statement generation requires additional libraries. This is a demo feature.');
+    } else if (format === 'excel') {
+        alert('Excel statement generation requires additional libraries. This is a demo feature.');
+    }
+}
+
+// Set default dates
+document.addEventListener('DOMContentLoaded', function() {
+    const today = new Date();
+    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    document.getElementById('from_date').valueAsDate = firstDay;
+    document.getElementById('to_date').valueAsDate = today;
+});
+
+// Add CSS for table
+const style = document.createElement('style');
+style.textContent = `
+    .table-container {
+        margin: 20px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow: hidden;
+    }
+    
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    th {
+        background-color: #003366;
+        color: white;
+        padding: 12px;
+        text-align: left;
+    }
+    
+    td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #ddd;
+    }
+    
+    tr:hover {
+        background-color: #f5f5f5;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}

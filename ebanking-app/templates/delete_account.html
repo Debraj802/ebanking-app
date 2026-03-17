@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+
+{% block title %}Permanently Delete Account{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Permanently Delete Account</h2>
+    
+    <div style="background-color: #f8d7da; padding: 20px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #dc3545;">
+        <h3 style="color: #721c24; margin-bottom: 10px;">⚠️ IRREVERSIBLE ACTION - WARNING!</h3>
+        <p style="color: #721c24; font-weight: bold;">This action will <u>permanently delete</u> your account from our database. This is IRREVERSIBLE!</p>
+        <ul style="color: #721c24; margin-left: 20px; margin-top: 15px;">
+            <li>Your account will be completely removed from the database</li>
+            <li>All your personal information will be erased permanently</li>
+            <li>You cannot recover this account after deletion</li>
+            <li>Account balance must be ₹0 before deletion</li>
+            <li>This action cannot be undone by anyone, including bank staff</li>
+        </ul>
+    </div>
+    
+    <div style="background-color: #fff3cd; padding: 15px; border-radius: 4px; margin-bottom: 20px; border-left: 4px solid #ffc107;">
+        <p style="color: #856404; margin: 0;">
+            <strong>Account to be deleted:</strong><br>
+            Account Number: {{ session.account_id }}<br>
+            Account Holder: {{ session.name }}
+        </p>
+    </div>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p><strong>Current Balance:</strong> 
+            <span id="currentBalance">Loading...</span>
+        </p>
+    </div>
+    
+    <form action="{{ url_for('delete_account') }}" method="POST" class="delete-form" id="deleteForm">
+        <div class="form-group">
+            <label for="confirmation">Type <strong style="color: #dc3545; font-size: 18px;">DELETE</strong> to confirm permanent deletion:</label>
+            <input type="text" id="confirmation" name="confirmation" 
+                   placeholder="Enter DELETE" 
+                   pattern="DELETE" 
+                   style="text-transform: uppercase; font-weight: bold;"
+                   required>
+            <small style="color: #dc3545;">Type DELETE in capital letters to confirm</small>
+        </div>
+        
+        <div class="form-group">
+            <label for="reason">Reason for deleting (Optional):</label>
+            <textarea id="reason" name="reason" rows="3" 
+                      placeholder="Please tell us why you're deleting your account (optional)"></textarea>
+        </div>
+        
+        <div style="margin: 20px 0; padding: 15px; background-color: #f8d7da; border-radius: 4px;">
+            <label style="display: flex; align-items: flex-start; color: #721c24;">
+                <input type="checkbox" id="confirm_permanent" required style="margin-top: 3px; margin-right: 10px;">
+                <span>I understand that this action is <strong>IRREVERSIBLE</strong> and all my data will be <strong>permanently deleted</strong> from the database.</span>
+            </label>
+        </div>
+        
+        <button type="submit" class="btn btn-danger" style="width: 100%; margin-bottom: 10px; padding: 15px; font-size: 18px; font-weight: bold;" id="deleteBtn">
+            🗑️ PERMANENTLY DELETE MY ACCOUNT
+        </button>
+        
+        <a href="{{ url_for('dashboard') }}" class="btn btn-success" style="width: 100%; padding: 12px; font-size: 16px;">
+            ↩️ NO, KEEP MY ACCOUNT ACTIVE
+        </a>
+    </form>
+    
+    <div style="margin-top: 30px; padding: 20px; background-color: #e8f4fd; border-radius: 6px;">
+        <h4 style="color: #003366; margin-bottom: 10px;">📋 Before You Go...</h4>
+        <p style="color: #666;">If you're facing issues, consider these alternatives:</p>
+        <ul style="color: #666; margin-left: 20px;">
+            <li>Contact customer support for help: 1800-123-4567</li>
+            <li>Visit your nearest branch for assistance</li>
+            <li>Temporarily freeze your account instead of deleting</li>
+            <li>Remove all money and keep account with zero balance</li>
+        </ul>
+    </div>
+</div>
+
+<script>
+// Fetch current balance to check if zero
+fetch('/balance-inquiry')
+    .then(response => response.text())
+    .then(html => {
+        const balanceMatch = html.match(/₹([\d,]+\.\d{2})/);
+        if (balanceMatch) {
+            const balance = parseFloat(balanceMatch[1].replace(/,/g, ''));
+            document.getElementById('currentBalance').innerHTML = balance === 0 ? 
+                '<span style="color: #28a745; font-weight: bold;">₹0.00 - Eligible for deletion</span>' : 
+                '<span style="color: #dc3545; font-weight: bold;">₹' + balance.toFixed(2) + ' - Please withdraw this amount first</span>';
+            
+            // Check if balance is zero
+            if (balance > 0) {
+                const warningDiv = document.createElement('div');
+                warningDiv.className = 'alert alert-error';
+                warningDiv.style.marginTop = '20px';
+                warningDiv.innerHTML = '<strong>⚠️ Cannot delete account!</strong> Account has balance of ₹' + balance.toFixed(2) + '. Please withdraw all funds first.';
+                document.querySelector('.form-container').insertBefore(warningDiv, document.querySelector('form'));
+                
+                // Disable the submit button if balance > 0
+                const deleteBtn = document.getElementById('deleteBtn');
+                deleteBtn.disabled = true;
+                deleteBtn.style.opacity = '0.5';
+                deleteBtn.style.cursor = 'not-allowed';
+                deleteBtn.title = 'Account must have zero balance';
+            }
+        }
+    });
+
+// Additional confirmation
+document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    const confirmation = document.getElementById('confirmation').value;
+    const confirmCheckbox = document.getElementById('confirm_permanent').checked;
+    const balanceText = document.getElementById('currentBalance').innerText;
+    
+    if (confirmation !== 'DELETE') {
+        e.preventDefault();
+        alert('❌ Please type DELETE in capital letters to confirm');
+        return;
+    }
+    
+    if (!confirmCheckbox) {
+        e.preventDefault();
+        alert('❌ Please confirm that you understand this action is irreversible');
+        return;
+    }
+    
+    if (balanceText.includes('₹0.00') === false && !balanceText.includes('Eligible')) {
+        e.preventDefault();
+        alert('❌ Account must have zero balance before deletion');
+        return;
+    }
+    
+    // Final confirmation with explicit warning
+    const finalConfirm = confirm(
+        '⚠️ FINAL WARNING ⚠️\n\n' +
+        'This is your last chance to cancel.\n\n' +
+        'Clicking OK will PERMANENTLY DELETE your account.\n' +
+        'This action CANNOT be undone.\n' +
+        'All your data will be lost forever.\n\n' +
+        'Are you absolutely sure?'
+    );
+    
+    if (!finalConfirm) {
+        e.preventDefault();
+        return;
+    }
+    
+    // Show processing message
+    const deleteBtn = document.getElementById('deleteBtn');
+    deleteBtn.disabled = true;
+    deleteBtn.innerHTML = '⏳ PROCESSING DELETION...';
+});
+
+// Real-time validation for DELETE text
+document.getElementById('confirmation').addEventListener('input', function() {
+    const confirmation = this.value;
+    if (confirmation === 'DELETE') {
+        this.style.borderColor = '#28a745';
+        this.style.backgroundColor = '#d4edda';
+    } else {
+        this.style.borderColor = '#dc3545';
+        this.style.backgroundColor = '#f8d7da';
+    }
+});
+</script>
+{% endblock %}

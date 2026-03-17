@@ -1,0 +1,58 @@
+{% extends "base.html" %}
+
+{% block title %}Balance Inquiry{% endblock %}
+
+{% block content %}
+<div class="form-container" style="max-width: 600px;">
+    <h2>Account Balance Details</h2>
+    
+    <div style="background-color: #e8f4fd; padding: 30px; border-radius: 8px; text-align: center;">
+        <div style="margin-bottom: 20px;">
+            <p style="color: #666; font-size: 16px;">Account Number</p>
+            <h3 style="color: #003366; font-size: 24px;">{{ account.account_id }}</h3>
+        </div>
+        
+        <div style="margin-bottom: 20px;">
+            <p style="color: #666; font-size: 16px;">Account Holder</p>
+            <h3 style="color: #333; font-size: 22px;">{{ account.name }}</h3>
+        </div>
+        
+        <div style="margin: 30px 0; padding: 20px; background-color: white; border-radius: 8px;">
+            <p style="color: #666; font-size: 18px; margin-bottom: 10px;">Available Balance</p>
+            <div style="font-size: 48px; font-weight: bold; color: #28a745;">
+                ₹{{ "%.2f"|format(account.available_balance) }}
+            </div>
+        </div>
+        
+        <div style="margin-top: 20px; padding: 15px; background-color: #f8f9fa; border-radius: 6px;">
+            <p style="margin: 5px 0;">
+                <strong>Last Transaction:</strong> 
+                {{ account.last_transaction_datetime or 'No transactions yet' }}
+            </p>
+        </div>
+    </div>
+    
+    <div style="display: flex; gap: 10px; margin-top: 20px;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="flex: 1;">
+            Back to Dashboard
+        </a>
+        <button onclick="window.print()" class="btn btn-primary" style="flex: 1;">
+            Print Balance
+        </button>
+    </div>
+    
+    <!-- Mini Statement (simulated since we don't have transaction table) -->
+    <div style="margin-top: 30px;">
+        <h3 style="color: #003366; margin-bottom: 15px;">Recent Activity</h3>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 6px;">
+            <p style="color: #666; text-align: center;">
+                {% if account.last_transaction_datetime %}
+                    Last transaction was on {{ account.last_transaction_datetime }}
+                {% else %}
+                    No recent transactions to display
+                {% endif %}
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

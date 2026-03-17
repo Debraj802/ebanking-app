@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+
+{% block title %}Verify Contact{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Verify Mobile Number & Email</h2>
+    
+    <div style="background-color: #e8f4fd; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p>Check if a mobile number or email is already registered in our system.</p>
+    </div>
+    
+    <!-- Mobile Verification -->
+    <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+        <h3 style="color: #003366; margin-bottom: 15px;">📱 Verify Mobile Number</h3>
+        
+        <form id="mobileVerifyForm">
+            <div class="form-group">
+                <label for="check_mobile">Mobile Number:</label>
+                <input type="tel" id="check_mobile" name="mobile" 
+                       placeholder="Enter 10-digit mobile number" 
+                       maxlength="10" pattern="[0-9]{10}" required>
+                <div id="mobile-check-status" class="verification-status"></div>
+            </div>
+            
+            <button type="button" onclick="checkMobile()" class="btn btn-primary" style="width: 100%;">
+                Check Mobile Number
+            </button>
+        </form>
+        
+        <!-- Mobile Result -->
+        <div id="mobileResult" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;">
+        </div>
+    </div>
+    
+    <!-- Email Verification -->
+    <div style="margin-bottom: 30px; padding: 20px; background-color: #f8f9fa; border-radius: 6px;">
+        <h3 style="color: #003366; margin-bottom: 15px;">📧 Verify Email Address</h3>
+        
+        <form id="emailVerifyForm">
+            <div class="form-group">
+                <label for="check_email">Email Address:</label>
+                <input type="email" id="check_email" name="email" 
+                       placeholder="Enter email address" required>
+                <div id="email-check-status" class="verification-status"></div>
+            </div>
+            
+            <button type="button" onclick="checkEmail()" class="btn btn-primary" style="width: 100%;">
+                Check Email Address
+            </button>
+        </form>
+        
+        <!-- Email Result -->
+        <div id="emailResult" style="display: none; margin-top: 15px; padding: 10px; border-radius: 4px;">
+        </div>
+    </div>
+    
+    <!-- Your Current Contact Information -->
+    {% if session.account_id %}
+    <div style="margin-top: 20px; padding: 20px; background-color: #d4edda; border-radius: 6px;">
+        <h4 style="color: #155724; margin-bottom: 10px;">Your Registered Contact Details:</h4>
+        <p style="color: #155724;"><strong>Mobile:</strong> <span id="currentMobile">Loading...</span></p>
+        <p style="color: #155724;"><strong>Email:</strong> <span id="currentEmail">Loading...</span></p>
+    </div>
+    {% endif %}
+    
+    <div style="margin-top: 20px; text-align: center;">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            Back to Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+// Fetch current user's contact info if logged in
+{% if session.account_id %}
+fetch('/balance-inquiry')
+    .then(response => response.text())
+    .then(html => {
+        // This is a hack - in production, create an API endpoint
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, 'text/html');
+        const accountInfo = doc.querySelector('.account-info');
+        if (accountInfo) {
+            const text = accountInfo.textContent;
+            const mobileMatch = text.match(/Mobile:\s*(\d{10})/);
+            const emailMatch = text.match(/Email:\s*([^\s]+@[^\s]+)/);
+            
+            if (mobileMatch) document.getElementById('currentMobile').textContent = mobileMatch[1];
+            if (emailMatch) document.getElementById('currentEmail').textContent = emailMatch[1];
+        }
+    });
+{% endif %}
+
+function checkMobile() {
+    const mobile = document.getElementById('check_mobile').value;
+    const statusDiv = document.getElementById('mobile-check-status');
+    const resultDiv = document.getElementById('mobileResult');
+    
+    if (mobile.length !== 10) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Mobile number must be 10 digits';
+        return;
+    }
+    
+    statusDiv.className = 'verification-status';
+    statusDiv.textContent = 'Checking...';
+    
+    fetch('/check-mobile', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({mobile: mobile})
+    })
+    .then(response => response.json())
+    .then(data => {
+        resultDiv.style.display = 'block';
+        
+        if (data.exists) {
+            resultDiv.className = 'verification-status verification-error';
+            resultDiv.innerHTML = '❌ This mobile number is already registered.';
+        } else {
+            resultDiv.className = 'verification-status verification-success';
+            resultDiv.innerHTML = '✅ This mobile number is available.';
+        }
+        
+        statusDiv.textContent = '';
+    })
+    .catch(error => {
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'verification-status verification-error';
+        resultDiv.innerHTML = 'Error checking mobile number. Please try again.';
+        console.error('Error:', error);
+    });
+}
+
+function checkEmail() {
+    const email = document.getElementById('check_email').value;
+    const statusDiv = document.getElementById('email-check-status');
+    const resultDiv = document.getElementById('emailResult');
+    
+    const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+    if (!emailPattern.test(email)) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Invalid email format';
+        return;
+    }
+    
+    statusDiv.className = 'verification-status';
+    statusDiv.textContent = 'Checking...';
+    
+    fetch('/check-email', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({email: email})
+    })
+    .then(response => response.json())
+    .then(data => {
+        resultDiv.style.display = 'block';
+        
+        if (data.exists) {
+            resultDiv.className = 'verification-status verification-error';
+            resultDiv.innerHTML = '❌ This email address is already registered.';
+        } else {
+            resultDiv.className = 'verification-status verification-success';
+            resultDiv.innerHTML = '✅ This email address is available.';
+        }
+        
+        statusDiv.textContent = '';
+    })
+    .catch(error => {
+        resultDiv.style.display = 'block';
+        resultDiv.className = 'verification-status verification-error';
+        resultDiv.innerHTML = 'Error checking email. Please try again.';
+        console.error('Error:', error);
+    });
+}
+
+// Real-time validation
+document.getElementById('check_mobile').addEventListener('input', function() {
+    this.value = this.value.replace(/[^0-9]/g, '');
+    if (this.value.length > 10) {
+        this.value = this.value.slice(0, 10);
+    }
+});
+</script>
+{% endblock %}

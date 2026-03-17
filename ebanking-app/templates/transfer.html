@@ -1,0 +1,187 @@
+{% extends "base.html" %}
+
+{% block title %}Transfer Money{% endblock %}
+
+{% block content %}
+<div class="form-container">
+    <h2>Transfer Money</h2>
+    
+    <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-bottom: 20px;">
+        <p><strong>From Account:</strong> {{ session.account_id }}</p>
+        <p><strong>Available Balance:</strong> 
+            <span id="currentBalance">Loading...</span>
+        </p>
+    </div>
+    
+    <form action="{{ url_for('transfer') }}" method="POST" id="transferForm" class="transfer-form">
+        <div class="form-group">
+            <label for="to_account">Beneficiary Account Number:</label>
+            <input type="text" id="to_account" name="to_account" 
+                   placeholder="Enter 10-digit account number" 
+                   pattern="[0-9]{10}" maxlength="10" required
+                   oninput="validateBeneficiary(this.value)">
+            <div id="beneficiary-status" class="verification-status"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="amount">Amount to Transfer (₹):</label>
+            <input type="number" id="amount" name="amount" 
+                   placeholder="Enter amount to transfer" 
+                   min="1" step="0.01" required
+                   oninput="validateTransferAmount(this.value)">
+            <div id="amount-status" class="verification-status"></div>
+        </div>
+        
+        <div class="form-group">
+            <label for="remarks">Remarks (Optional):</label>
+            <textarea id="remarks" name="remarks" rows="3" 
+                      placeholder="Enter any remarks for this transfer"></textarea>
+        </div>
+        
+        <!-- Transfer Preview -->
+        <div id="previewSection" style="display: none; background-color: #e8f4fd; padding: 15px; border-radius: 4px; margin: 20px 0;">
+            <h4 style="color: #003366; margin-bottom: 10px;">Transfer Summary</h4>
+            <p><strong>From:</strong> {{ session.account_id }}</p>
+            <p><strong>To:</strong> <span id="previewBeneficiary"></span></p>
+            <p><strong>Amount:</strong> ₹<span id="previewAmount">0.00</span></p>
+            <p><strong>New Balance:</strong> ₹<span id="newBalance">0.00</span></p>
+        </div>
+        
+        <button type="submit" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">
+            Transfer Money
+        </button>
+        
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary" style="width: 100%;">
+            Cancel
+        </a>
+    </form>
+    
+    <!-- Transfer Information -->
+    <div style="margin-top: 20px; padding: 15px; background-color: #d1ecf1; border-radius: 4px;">
+        <h4 style="color: #0c5460; margin-bottom: 10px;">📌 Transfer Information:</h4>
+        <ul style="margin-left: 20px; color: #0c5460;">
+            <li>Minimum transfer amount: ₹1</li>
+            <li>Maximum transfer per transaction: ₹1,00,000</li>
+            <li>Daily transfer limit: ₹5,00,000</li>
+            <li>Transfers are processed instantly</li>
+            <li>Double-check beneficiary account number</li>
+        </ul>
+    </div>
+    
+    <!-- Saved Beneficiaries (Optional feature) -->
+    <div style="margin-top: 20px;">
+        <h4 style="color: #003366; margin-bottom: 10px;">Recent Beneficiaries</h4>
+        <div style="background-color: #f8f9fa; padding: 15px; border-radius: 4px;">
+            <p style="color: #666; text-align: center;">No saved beneficiaries yet</p>
+        </div>
+    </div>
+</div>
+
+<script>
+let currentBalance = 0;
+let isValidBeneficiary = false;
+
+// Fetch current balance
+fetch('/balance-inquiry')
+    .then(response => response.text())
+    .then(html => {
+        const balanceMatch = html.match(/₹([\d,]+\.\d{2})/);
+        if (balanceMatch) {
+            currentBalance = parseFloat(balanceMatch[1].replace(/,/g, ''));
+            document.getElementById('currentBalance').textContent = '₹' + currentBalance.toFixed(2);
+        }
+    });
+
+function validateBeneficiary(accountNumber) {
+    const statusDiv = document.getElementById('beneficiary-status');
+    const previewBeneficiary = document.getElementById('previewBeneficiary');
+    
+    if (accountNumber.length === 10) {
+        // Check if it's not the same account
+        if (accountNumber === '{{ session.account_id }}') {
+            statusDiv.className = 'verification-status verification-error';
+            statusDiv.textContent = '✗ Cannot transfer to your own account';
+            isValidBeneficiary = false;
+            return;
+        }
+        
+        // You would typically verify with server if account exists
+        // For now, we'll assume it's valid
+        statusDiv.className = 'verification-status verification-success';
+        statusDiv.textContent = '✓ Account number valid';
+        previewBeneficiary.textContent = accountNumber;
+        isValidBeneficiary = true;
+        
+        // Update preview
+        updateTransferPreview();
+    } else {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Account number must be 10 digits';
+        isValidBeneficiary = false;
+    }
+}
+
+function validateTransferAmount(amount) {
+    const statusDiv = document.getElementById('amount-status');
+    amount = parseFloat(amount) || 0;
+    
+    if (amount <= 0) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Please enter a valid amount';
+    } else if (amount > currentBalance) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Insufficient balance';
+    } else if (amount > 100000) {
+        statusDiv.className = 'verification-status verification-error';
+        statusDiv.textContent = '✗ Maximum transfer amount is ₹1,00,000';
+    } else {
+        statusDiv.className = 'verification-status verification-success';
+        statusDiv.textContent = '✓ Valid amount';
+    }
+    
+    updateTransferPreview();
+}
+
+function updateTransferPreview() {
+    const previewSection = document.getElementById('previewSection');
+    const amount = parseFloat(document.getElementById('amount').value) || 0;
+    const toAccount = document.getElementById('to_account').value;
+    
+    if (isValidBeneficiary && amount > 0 && amount <= currentBalance && amount <= 100000) {
+        previewSection.style.display = 'block';
+        document.getElementById('previewAmount').textContent = amount.toFixed(2);
+        document.getElementById('newBalance').textContent = (currentBalance - amount).toFixed(2);
+    } else {
+        previewSection.style.display = 'none';
+    }
+}
+
+// Final validation before submit
+document.getElementById('transferForm').addEventListener('submit', function(e) {
+    const amount = parseFloat(document.getElementById('amount').value);
+    const toAccount = document.getElementById('to_account').value;
+    
+    if (!isValidBeneficiary) {
+        e.preventDefault();
+        alert('Please enter a valid beneficiary account number');
+        return;
+    }
+    
+    if (amount > currentBalance) {
+        e.preventDefault();
+        alert('Insufficient balance for this transfer!');
+        return;
+    }
+    
+    if (amount > 100000) {
+        e.preventDefault();
+        alert('Maximum transfer amount is ₹1,00,000 per transaction');
+        return;
+    }
+    
+    if (!confirm(`Confirm transfer of ₹${amount.toFixed(2)} to account ${toAccount}?`)) {
+        e.preventDefault();
+    }
+});
+</script>
+{% endblock %}

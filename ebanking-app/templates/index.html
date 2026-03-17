@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="form-container" style="max-width: 400px;">
+        <h2>Welcome to E-Banking System</h2>
+        
+        {% if not session.account_id %}
+            <div style="text-align: center; margin-bottom: 30px;">
+                <p style="color: #666; margin-bottom: 20px;">
+                    Secure • Convenient • 24/7 Access
+                </p>
+                <a href="{{ url_for('create_account') }}" class="btn btn-primary" style="width: 100%; margin-bottom: 20px;">
+                    Create New Account
+                </a>
+                
+                <hr style="margin: 20px 0;">
+                
+                <h3 style="color: #003366; margin-bottom: 15px;">Existing User Login</h3>
+                
+                <form action="{{ url_for('login') }}" method="POST">
+                    <div class="form-group">
+                        <label for="account_id">Account Number:</label>
+                        <input type="text" id="account_id" name="account_id" 
+                               placeholder="Enter 10-digit account number" 
+                               pattern="[0-9]{10}" maxlength="10" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="security_pin">Security PIN:</label>
+                        <input type="password" id="security_pin" name="security_pin" 
+                               placeholder="Enter 6-digit PIN" 
+                               pattern="[0-9]{6}" maxlength="6" required>
+                    </div>
+                    
+                    <button type="submit" class="btn btn-success" style="width: 100%;">
+                        Login to Account
+                    </button>
+                </form>
+                
+                <div style="margin-top: 15px; padding: 10px; background-color: #fff3cd; border-radius: 4px;">
+                    <p style="color: #856404; font-size: 12px; margin: 0;">
+                        🔐 Use your Account Number and 6-digit Security PIN to login
+                    </p>
+                </div>
+            </div>
+        {% else %}
+            <div style="text-align: center;">
+                <h3 style="color: #28a745; margin-bottom: 20px;">✓ You're Logged In</h3>
+                <p>Welcome back, <strong>{{ session.name }}</strong></p>
+                <p>Account: {{ session.account_id }}</p>
+                
+                <div style="margin-top: 30px;">
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="width: 100%; margin-bottom: 10px;">
+                        Go to Dashboard
+                    </a>
+                    <a href="{{ url_for('logout') }}" class="btn btn-secondary" style="width: 100%;">
+                        Logout
+                    </a>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+    
+    <div style="margin-top: 40px; text-align: center;">
+        <h3 style="color: #003366; margin-bottom: 20px;">Our Services</h3>
+        <div class="services-grid">
+            <div class="service-card">
+                <h3>24/7 Banking</h3>
+                <p>Access your account anytime, anywhere</p>
+            </div>
+            <div class="service-card">
+                <h3>Secure Transactions</h3>
+                <p>Bank-grade security with PIN protection</p>
+            </div>
+            <div class="service-card">
+                <h3>Instant Transfers</h3>
+                <p>Send money instantly to any account</p>
+            </div>
+            <div class="service-card">
+                <h3>Mobile & Email Verification</h3>
+                <p>Multi-factor authentication for safety</p>
+            </div>
+        </div>
+    </div>
+    
+    <div style="margin-top: 30px; background-color: #f8d7da; padding: 20px; border-radius: 6px;">
+        <h4 style="color: #721c24; margin-bottom: 10px;">🔒 Security Alert:</h4>
+        <p style="color: #721c24; margin-bottom: 5px;">Bank will NEVER ask for your Security PIN:</p>
+        <ul style="color: #721c24; margin-left: 20px; font-size: 14px;">
+            <li>No phone call asking for PIN</li>
+            <li>No email requesting PIN</li>
+            <li>No SMS seeking PIN verification</li>
+            <li>Only enter PIN on this official website</li>
+        </ul>
+    </div>
+</div>
+{% endblock %}
